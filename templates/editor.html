@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{{ project_name }} — LaTeX Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- CodeMirror -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/stex/stex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161d;
+    --surface2: #1a1e28;
+    --surface3: #20263a;
+    --border: #252a38;
+    --accent: #4f9cf9;
+    --accent2: #a78bfa;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --topbar: 52px;
+    --toolbar: 42px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+
+  /* ── Top Bar ── */
+  .topbar {
+    height: var(--topbar); flex-shrink: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 0 1.2rem;
+    z-index: 100;
+  }
+  .topbar-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--text);
+    text-decoration: none; white-space: nowrap;
+  }
+  .topbar-logo span { color: var(--accent); }
+
+  .topbar-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+  .topbar-project {
+    font-size: 0.88rem; font-weight: 500;
+    color: var(--text-dim); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+  }
+
+  .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+
+  .btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 0.9rem; border-radius: 7px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; border: none; transition: background 0.2s, transform 0.1s;
+  }
+  .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-save { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-save:hover { background: var(--surface3); color: var(--text); }
+
+  .btn-compile {
+    background: var(--green); color: #052e16;
+    box-shadow: 0 2px 12px rgba(52,211,153,0.3);
+  }
+  .btn-compile:hover { background: #6ee7b7; box-shadow: 0 4px 20px rgba(52,211,153,0.4); }
+  .btn-compile:disabled { background: #1f4a39; color: #4a9b7a; cursor: not-allowed; box-shadow: none; }
+
+  .save-indicator {
+    font-size: 0.75rem; color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .save-indicator.saved { color: var(--green); }
+  .save-indicator.saving { color: var(--yellow); }
+
+  /* ── Editor Toolbar ── */
+  .editor-toolbar {
+    height: var(--toolbar); flex-shrink: 0;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.2rem;
+    padding: 0 0.8rem;
+  }
+  .tb-btn {
+    padding: 0.28rem 0.55rem; border-radius: 5px;
+    background: none; border: none;
+    color: var(--text-dim); cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .tb-btn:hover { background: var(--surface3); color: var(--text); }
+  .tb-sep { width: 1px; height: 16px; background: var(--border); margin: 0 0.3rem; }
+
+  /* ── Main Layout ── */
+  .main {
+    flex: 1; display: flex; overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ── Editor pane ── */
+  .editor-pane {
+    width: 50%; display: flex; flex-direction: column;
+    border-right: 2px solid var(--border);
+    min-width: 280px; position: relative;
+  }
+  .editor-pane-header {
+    padding: 0.5rem 1rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .pane-title { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .pane-file { font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+
+  .cm-wrap { flex: 1; overflow: hidden; min-height: 0; }
+  .CodeMirror {
+    height: 100% !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 13.5px !important;
+    line-height: 1.7 !important;
+    background: #11131a !important;
+  }
+  .CodeMirror-scroll { padding-bottom: 2rem; }
+
+  /* ── Resize handle ── */
+  .resize-handle {
+    width: 4px; background: var(--border);
+    cursor: col-resize; flex-shrink: 0;
+    transition: background 0.2s;
+    z-index: 10;
+  }
+  .resize-handle:hover, .resize-handle.dragging { background: var(--accent); }
+
+  /* ── PDF pane ── */
+  .pdf-pane {
+    flex: 1; display: flex; flex-direction: column;
+    min-width: 280px; background: #1a1a2e;
+  }
+  .pdf-pane-header {
+    padding: 0.5rem 1rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .pdf-toolbar { display: flex; align-items: center; gap: 0.5rem; }
+  .pdf-toolbar button {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-dim); padding: 0.25rem 0.6rem;
+    border-radius: 5px; cursor: pointer; font-size: 0.8rem;
+    transition: background 0.15s;
+  }
+  .pdf-toolbar button:hover { background: var(--surface3); color: var(--text); }
+
+  .pdf-viewer { flex: 1; overflow: hidden; position: relative; }
+  #pdf-iframe {
+    width: 100%; height: 100%; border: none;
+    background: #2a2a3e;
+  }
+
+  /* ── PDF placeholder ── */
+  .pdf-placeholder {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1rem; color: var(--text-muted);
+    background: #11131a;
+  }
+  .pdf-placeholder-icon {
+    width: 80px; height: 100px;
+    border: 2px solid var(--border);
+    border-radius: 4px 12px 4px 4px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    background: var(--surface2);
+  }
+  .pdf-placeholder-icon::before {
+    content: '';
+    position: absolute; top: -1px; right: -1px;
+    width: 22px; height: 22px;
+    background: var(--bg);
+    border-left: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    border-radius: 0 0 0 4px;
+  }
+  .pdf-placeholder p { font-size: 0.85rem; text-align: center; max-width: 200px; line-height: 1.5; }
+  .pdf-placeholder .kbd {
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 0.2rem 0.5rem; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  /* ── Log panel ── */
+  .log-panel {
+    border-top: 2px solid var(--border);
+    background: #0a0c10; flex-shrink: 0;
+    display: none; flex-direction: column;
+    max-height: 220px;
+  }
+  .log-panel.open { display: flex; }
+  .log-header {
+    padding: 0.5rem 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .log-header span { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .log-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0; }
+  .log-close:hover { color: var(--text); }
+  #log-content {
+    flex: 1; overflow-y: auto; padding: 0.8rem 1rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    line-height: 1.7; color: #a0a8c0; white-space: pre-wrap; word-break: break-word;
+  }
+  #log-content .error-line { color: var(--red); }
+  #log-content .warn-line { color: var(--yellow); }
+  #log-content .ok-line { color: var(--green); }
+
+  /* ── Status bar ── */
+  .statusbar {
+    height: 24px; flex-shrink: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 1rem; gap: 1.5rem;
+    font-size: 0.7rem; color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .statusbar span { display: flex; align-items: center; gap: 0.3rem; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .status-dot.red { background: var(--red); }
+  .status-dot.yellow { background: var(--yellow); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── Spinner ── */
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(5,46,22,0.3);
+    border-top-color: #052e16;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  .spinner.active { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%) translateY(60px);
+    z-index: 600; padding: 0.7rem 1.4rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; font-size: 0.85rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    opacity: 0; transition: transform 0.3s, opacity 0.3s;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  .toast.info { border-color: var(--accent); color: var(--accent); }
+  /* ── File Sidebar ── */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    transition: width 0.25s ease;
+    overflow: hidden;
+  }
+  .sidebar.collapsed { width: 0; }
+
+  .sidebar-header {
+    padding: 0.6rem 0.9rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0; white-space: nowrap;
+  }
+  .sidebar-title {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+  .sidebar-icon-btn {
+    background: none; border: none; color: var(--text-muted);
+    cursor: pointer; padding: 0.2rem; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .sidebar-icon-btn:hover { background: var(--surface3); color: var(--text); }
+  .sidebar-icon-btn svg { width: 14px; height: 14px; }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px; margin: 0.7rem;
+    padding: 0.9rem 0.5rem;
+    text-align: center; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(79,156,249,0.06);
+  }
+  .drop-zone p { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; margin-top: 0.3rem; }
+  .drop-zone span { color: var(--accent); font-weight: 600; }
+  .drop-zone svg { width: 22px; height: 22px; color: var(--text-muted); }
+  #file-input { display: none; }
+
+  .upload-progress {
+    margin: 0 0.7rem 0.5rem;
+    background: var(--surface2); border-radius: 4px; height: 3px;
+    overflow: hidden; display: none;
+  }
+  .upload-progress.active { display: block; }
+  .upload-progress-bar {
+    height: 100%; background: var(--accent);
+    width: 0%; transition: width 0.3s; border-radius: 4px;
+  }
+
+  .img-list {
+    flex: 1; overflow-y: auto; padding: 0 0.5rem 0.5rem;
+  }
+  .img-list::-webkit-scrollbar { width: 4px; }
+  .img-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .img-empty {
+    text-align: center; padding: 1.5rem 0.5rem;
+    font-size: 0.75rem; color: var(--text-muted); line-height: 1.6;
+  }
+
+  .img-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.45rem 0.5rem; border-radius: 7px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .img-item:hover { background: var(--surface2); border-color: var(--border); }
+
+  .img-thumb {
+    width: 36px; height: 36px; border-radius: 5px;
+    object-fit: cover; background: var(--surface2);
+    border: 1px solid var(--border); flex-shrink: 0;
+  }
+  .img-thumb-placeholder {
+    width: 36px; height: 36px; border-radius: 5px;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--text-muted);
+    font-size: 0.6rem; font-family: 'JetBrains Mono', monospace;
+  }
+
+  .img-info { flex: 1; min-width: 0; }
+  .img-name {
+    font-size: 0.73rem; font-weight: 500; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;
+  }
+  .img-size { font-size: 0.65rem; color: var(--text-muted); }
+
+  .img-item-btns { display: none; gap: 0.2rem; flex-shrink: 0; }
+  .img-item:hover .img-item-btns { display: flex; }
+  .img-action-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 0.2rem; border-radius: 4px; color: var(--text-muted);
+    transition: background 0.15s, color 0.15s; display: flex;
+  }
+  .img-action-btn:hover { background: var(--surface3); color: var(--text); }
+  .img-action-btn.del:hover { color: var(--red); }
+  .img-action-btn svg { width: 12px; height: 12px; }
+
+  .btn-sidebar {
+    background: var(--surface2); color: var(--text-muted);
+    border: 1px solid var(--border); padding: 0.4rem 0.7rem;
+  }
+  .btn-sidebar:hover { background: var(--surface3); color: var(--text); }
+
+  .img-preview-overlay {
+    display: none; position: fixed; inset: 0; z-index: 700;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+    align-items: center; justify-content: center; flex-direction: column; gap: 1rem;
+  }
+  .img-preview-overlay.open { display: flex; }
+  .img-preview-overlay img {
+    max-width: 90vw; max-height: 78vh;
+    border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    object-fit: contain;
+  }
+  .img-preview-name { color: #fff; font-size: 0.85rem; opacity: 0.7; }
+  .img-preview-close {
+    position: absolute; top: 1.5rem; right: 1.5rem;
+    background: rgba(255,255,255,0.1); border: none;
+    color: #fff; width: 36px; height: 36px; border-radius: 50%;
+    cursor: pointer; font-size: 1.1rem; display: flex;
+    align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .img-preview-close:hover { background: rgba(255,255,255,0.2); }
+  .img-insert-hint {
+    font-size: 0.75rem; color: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.08); padding: 0.4rem 1.2rem;
+    border-radius: 20px; cursor: pointer; border: none;
+    transition: background 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .img-insert-hint:hover { background: rgba(255,255,255,0.16); color: #fff; }
+
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <a class="topbar-logo" href="/">LaTeX <span>Studio</span></a>
+  <div class="topbar-sep"></div>
+  <div class="topbar-project">{{ project_name }}</div>
+  <div class="topbar-actions">
+    <button class="btn btn-sidebar" title="Toggle Images Panel" onclick="toggleSidebar()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Images
+    </button>
+    <span class="save-indicator" id="save-indicator">All changes saved</span>
+    <button class="btn btn-save" onclick="saveFile()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+      Save
+    </button>
+    <button class="btn btn-compile" id="compile-btn" onclick="compile()">
+      <div class="spinner" id="spinner"></div>
+      <svg id="compile-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Compile PDF
+    </button>
+  </div>
+</div>
+
+<!-- Editor Toolbar -->
+<div class="editor-toolbar">
+  <button class="tb-btn" title="Bold (Ctrl+B)" onclick="insertSnippet('\\textbf{', '}')"><b>B</b></button>
+  <button class="tb-btn" title="Italic (Ctrl+I)" onclick="insertSnippet('\\textit{', '}')"><i>I</i></button>
+  <button class="tb-btn" title="Underline" onclick="insertSnippet('\\underline{', '}')"><u>U</u></button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="insertSnippet('\\section{', '}')">§ Section</button>
+  <button class="tb-btn" onclick="insertSnippet('\\subsection{', '}')">§§ Subsection</button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="insertBlock('\\begin{equation}\n    \n\\end{equation}')">∑ Equation</button>
+  <button class="tb-btn" onclick="insertBlock('\\begin{itemize}\n    \\item \n\\end{itemize}')">• List</button>
+  <button class="tb-btn" onclick="insertBlock('\\begin{enumerate}\n    \\item \n\\end{enumerate}')">1. Enum</button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="insertBlock('\\begin{figure}[h]\n    \\centering\n    \\includegraphics[width=0.8\\textwidth]{image}\n    \\caption{Caption}\n    \\label{fig:label}\n\\end{figure}')">🖼 Figure</button>
+  <button class="tb-btn" onclick="insertBlock('\\begin{table}[h]\n    \\centering\n    \\begin{tabular}{ll}\n        \\hline\n        Col1 & Col2 \\\\\n        \\hline\n        a & b \\\\\n        \\hline\n    \\end{tabular}\n    \\caption{Caption}\n\\end{table}')">⊞ Table</button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="insertSnippet('$', '$')">$ Math</button>
+  <button class="tb-btn" onclick="insertSnippet('\\href{url}{', '}')">🔗 Link</button>
+  <button class="tb-btn" onclick="insertSnippet('\\textcolor{red}{', '}')">🎨 Color</button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="toggleComment()">// Comment</button>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Images Sidebar -->
+  <div class="sidebar collapsed" id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Images</span>
+      <button class="sidebar-icon-btn" onclick="toggleSidebar()" title="Close">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      <p>Drop images here or<br><span>click to browse</span></p>
+    </div>
+    <input type="file" id="file-input" multiple accept="image/png,image/jpeg,image/gif,image/bmp,image/svg+xml,.eps,.pdf">
+
+    <!-- Upload progress bar -->
+    <div class="upload-progress" id="upload-progress">
+      <div class="upload-progress-bar" id="upload-progress-bar"></div>
+    </div>
+
+    <!-- Image list -->
+    <div class="img-list" id="img-list">
+      <div class="img-empty" id="img-empty">No images yet.<br>Upload to get started.</div>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div class="editor-pane" id="editor-pane">
+    <div class="editor-pane-header">
+      <span class="pane-title">Editor</span>
+      <span class="pane-file">main.tex</span>
+    </div>
+    <div class="cm-wrap">
+      <textarea id="editor">{{ content }}</textarea>
+    </div>
+  </div>
+
+  <!-- Drag handle -->
+  <div class="resize-handle" id="resize-handle"></div>
+
+  <!-- PDF -->
+  <div class="pdf-pane" id="pdf-pane">
+    <div class="pdf-pane-header">
+      <span class="pane-title">Output</span>
+      <div class="pdf-toolbar">
+        <button onclick="reloadPdf()" title="Refresh PDF">↺ Refresh</button>
+        <button onclick="downloadPdf()" title="Download PDF">⬇ Download</button>
+      </div>
+    </div>
+    <div class="pdf-viewer" id="pdf-viewer">
+      <div class="pdf-placeholder" id="pdf-placeholder">
+        <div class="pdf-placeholder-icon">
+          <svg width="32" height="32" fill="none" stroke="#4f9cf9" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <p>Click <span class="kbd">Compile PDF</span> to generate the output document.</p>
+      </div>
+      <iframe id="pdf-iframe" style="display:none;"></iframe>
+    </div>
+  </div>
+
+</div>
+
+<!-- Log Panel -->
+<div class="log-panel" id="log-panel">
+  <div class="log-header">
+    <span id="log-title">Compilation Log</span>
+    <button class="log-close" onclick="closeLog()">✕</button>
+  </div>
+  <div id="log-content"></div>
+</div>
+
+<!-- Status bar -->
+<div class="statusbar">
+  <span><div class="status-dot" id="status-dot"></div><span id="status-text">Ready</span></span>
+  <span id="cursor-pos">Ln 1, Col 1</span>
+  <span>LaTeX</span>
+  <span>UTF-8</span>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Image Preview Modal -->
+<div class="img-preview-overlay" id="img-preview" onclick="closePreview(event)">
+  <button class="img-preview-close" onclick="closePreview()">&#x2715;</button>
+  <img id="preview-img" src="" alt="">
+  <div class="img-preview-name" id="preview-name"></div>
+  <button class="img-insert-hint" id="preview-insert-btn" onclick="insertFromPreview()">
+    + Insert into editor
+  </button>
+</div>
+
+<script>
+const PID = "{{ pid }}";
+let saved = true;
+let autoSaveTimer = null;
+let pdfLoaded = false;
+
+// ── CodeMirror ────────────────────────────────────────────────────────────
+const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+  mode: 'stex',
+  theme: 'dracula',
+  lineNumbers: true,
+  matchBrackets: true,
+  autoCloseBrackets: true,
+  lineWrapping: true,
+  indentUnit: 4,
+  tabSize: 4,
+  indentWithTabs: false,
+  extraKeys: {
+    "Ctrl-S": () => saveFile(),
+    "Ctrl-Enter": () => compile(),
+    "Ctrl-/": () => editor.execCommand('toggleComment'),
+  }
+});
+
+// Fix height
+setTimeout(() => editor.refresh(), 100);
+
+// Cursor position
+editor.on('cursorActivity', () => {
+  const c = editor.getCursor();
+  document.getElementById('cursor-pos').textContent = `Ln ${c.line+1}, Col ${c.ch+1}`;
+});
+
+// Auto-save on change
+editor.on('change', () => {
+  markUnsaved();
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveFile, 2000);
+});
+
+function markUnsaved() {
+  saved = false;
+  const el = document.getElementById('save-indicator');
+  el.textContent = 'Unsaved changes'; el.className = 'save-indicator saving';
+}
+function markSaved() {
+  saved = true;
+  const el = document.getElementById('save-indicator');
+  el.textContent = 'All changes saved'; el.className = 'save-indicator saved';
+  setTimeout(() => { el.className = 'save-indicator'; }, 2000);
+}
+
+// ── Save ───────────────────────────────────────────────────────────────────
+async function saveFile() {
+  clearTimeout(autoSaveTimer);
+  const content = editor.getValue();
+  try {
+    await fetch('/api/projects/' + PID + '/save', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ content })
+    });
+    markSaved();
+  } catch {
+    showToast('Save failed', 'error');
+  }
+}
+
+// ── Compile ────────────────────────────────────────────────────────────────
+async function compile() {
+  const btn = document.getElementById('compile-btn');
+  const spinner = document.getElementById('spinner');
+  const icon = document.getElementById('compile-icon');
+  const dot = document.getElementById('status-dot');
+
+  btn.disabled = true;
+  spinner.classList.add('active');
+  icon.style.display = 'none';
+  setStatus('Compiling…', 'yellow');
+
+  const content = editor.getValue();
+  try {
+    const res = await fetch('/api/projects/' + PID + '/compile', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ content })
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    spinner.classList.remove('active');
+    icon.style.display = '';
+
+    if (data.success) {
+      setStatus('Compiled successfully', 'green');
+      showToast('✓ PDF compiled successfully!', 'success');
+      loadPdf();
+      showLog(data.log, true);
+    } else {
+      setStatus('Compilation failed', 'red');
+      showToast('Compilation failed — check the log', 'error');
+      showLog(data.log, false);
+    }
+  } catch(e) {
+    btn.disabled = false;
+    spinner.classList.remove('active');
+    icon.style.display = '';
+    setStatus('Error', 'red');
+    showToast('Server error', 'error');
+  }
+}
+
+function setStatus(text, color) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot';
+  if (color === 'red') dot.classList.add('red');
+  else if (color === 'yellow') dot.classList.add('yellow');
+}
+
+// ── PDF ────────────────────────────────────────────────────────────────────
+function loadPdf() {
+  const ts = Date.now();
+  const iframe = document.getElementById('pdf-iframe');
+  iframe.src = '/api/projects/' + PID + '/pdf?t=' + ts;
+  iframe.style.display = 'block';
+  document.getElementById('pdf-placeholder').style.display = 'none';
+  pdfLoaded = true;
+}
+
+function reloadPdf() {
+  if (pdfLoaded) loadPdf();
+  else showToast('Compile first to generate a PDF', 'info');
+}
+
+function downloadPdf() {
+  if (!pdfLoaded) { showToast('Compile first!', 'info'); return; }
+  const a = document.createElement('a');
+  a.href = '/api/projects/' + PID + '/pdf';
+  a.download = 'main.pdf';
+  a.click();
+}
+
+// ── Log ────────────────────────────────────────────────────────────────────
+function showLog(log, success) {
+  const panel = document.getElementById('log-panel');
+  const content = document.getElementById('log-content');
+  const title = document.getElementById('log-title');
+  title.textContent = success ? '✓ Compilation Log' : '✗ Compilation Errors';
+  title.style.color = success ? 'var(--green)' : 'var(--red)';
+
+  const lines = log.split('\n').map(line => {
+    const cls = line.match(/error/i) ? 'error-line'
+              : line.match(/warning/i) ? 'warn-line'
+              : line.startsWith('Output written') ? 'ok-line' : '';
+    return cls ? `<span class="${cls}">${escHtml(line)}</span>` : escHtml(line);
+  });
+  content.innerHTML = lines.join('\n');
+  panel.classList.add('open');
+  content.scrollTop = content.scrollHeight;
+}
+
+function closeLog() {
+  document.getElementById('log-panel').classList.remove('open');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Toolbar helpers ────────────────────────────────────────────────────────
+function insertSnippet(before, after) {
+  const sel = editor.getSelection();
+  if (sel) {
+    editor.replaceSelection(before + sel + after);
+  } else {
+    const doc = editor.getDoc();
+    const cursor = doc.getCursor();
+    doc.replaceRange(before + after, cursor);
+    doc.setCursor({ line: cursor.line, ch: cursor.ch + before.length });
+  }
+  editor.focus();
+}
+
+function insertBlock(text) {
+  const doc = editor.getDoc();
+  const cursor = doc.getCursor();
+  doc.replaceRange('\n' + text + '\n', cursor);
+  editor.focus();
+}
+
+function toggleComment() {
+  editor.execCommand('toggleComment');
+  editor.focus();
+}
+
+// ── Resize handle ──────────────────────────────────────────────────────────
+const handle = document.getElementById('resize-handle');
+const editorPane = document.getElementById('editor-pane');
+const pdfPane = document.getElementById('pdf-pane');
+let isResizing = false;
+
+handle.addEventListener('mousedown', e => {
+  isResizing = true;
+  handle.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (!isResizing) return;
+  const container = document.querySelector('.main');
+  const rect = container.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const total = rect.width;
+  const pct = Math.max(25, Math.min(75, (x / total) * 100));
+  editorPane.style.width = pct + '%';
+  pdfPane.style.width = (100 - pct) + '%';
+  editor.refresh();
+});
+document.addEventListener('mouseup', () => {
+  if (!isResizing) return;
+  isResizing = false;
+  handle.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  editor.refresh();
+});
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ── Keyboard shortcut hint ─────────────────────────────────────────────────
+// ── Image Sidebar ──────────────────────────────────────────────────────────
+let sidebarOpen = false;
+let previewCurrentFile = null;
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  sidebarOpen = !sidebarOpen;
+  if (sidebarOpen) {
+    sidebar.classList.remove('collapsed');
+    loadImages();
+  } else {
+    sidebar.classList.add('collapsed');
+  }
+  setTimeout(() => editor.refresh(), 260);
+}
+
+async function loadImages() {
+  const res = await fetch('/api/projects/' + PID + '/images');
+  const files = await res.json();
+  renderImageList(files);
+}
+
+function renderImageList(files) {
+  const list = document.getElementById('img-list');
+  const empty = document.getElementById('img-empty');
+
+  // Remove old items (keep empty msg)
+  list.querySelectorAll('.img-item').forEach(el => el.remove());
+
+  if (files.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  files.forEach(f => {
+    const isPreviewable = /\.(png|jpe?g|gif|bmp|svg)$/i.test(f.name);
+    const item = document.createElement('div');
+    item.className = 'img-item';
+    item.dataset.name = f.name;
+
+    const thumbHtml = isPreviewable
+      ? `<img class="img-thumb" src="/api/projects/${PID}/images/${encodeURIComponent(f.name)}" alt="${f.name}" loading="lazy">`
+      : `<div class="img-thumb-placeholder">${f.name.split('.').pop().toUpperCase()}</div>`;
+
+    item.innerHTML = `
+      ${thumbHtml}
+      <div class="img-info">
+        <div class="img-name" title="${f.name}">${f.name}</div>
+        <div class="img-size">${formatSize(f.size)}</div>
+      </div>
+      <div class="img-item-btns">
+        <button class="img-action-btn" title="Insert into editor" onclick="insertImageSnippet('${f.name}', event)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        </button>
+        <button class="img-action-btn del" title="Delete image" onclick="deleteImage('${f.name}', event)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </div>`;
+
+    // Click item body to preview
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.img-item-btns')) return;
+      openPreview(f.name, isPreviewable);
+    });
+
+    list.appendChild(item);
+  });
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function insertImageSnippet(name, e) {
+  if (e) e.stopPropagation();
+  const nameNoExt = name.replace(/\.[^/.]+$/, '');
+  const snippet = `\\begin{figure}[h]\n    \\centering\n    \\includegraphics[width=0.8\\textwidth]{images/${name}}\n    \\caption{Caption}\n    \\label{fig:${nameNoExt}}\n\\end{figure}`;
+  const doc = editor.getDoc();
+  const cursor = doc.getCursor();
+  doc.replaceRange('\n' + snippet.replace(/\\n/g, '\n') + '\n', cursor);
+  editor.focus();
+  showToast('Figure snippet inserted', 'success');
+}
+
+async function deleteImage(name, e) {
+  if (e) e.stopPropagation();
+  if (!confirm(`Delete "${name}"?`)) return;
+  const res = await fetch(`/api/projects/${PID}/images/${encodeURIComponent(name)}`, { method: 'DELETE' });
+  if (res.ok) {
+    loadImages();
+    showToast('Image deleted', 'error');
+  }
+}
+
+// ── Upload ─────────────────────────────────────────────────────────────────
+function setupUpload() {
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) uploadFiles(fileInput.files);
+    fileInput.value = '';
+  });
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault(); dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) uploadFiles(e.dataTransfer.files);
+  });
+}
+
+async function uploadFiles(files) {
+  const bar = document.getElementById('upload-progress');
+  const barFill = document.getElementById('upload-progress-bar');
+  bar.classList.add('active');
+  barFill.style.width = '20%';
+
+  const formData = new FormData();
+  Array.from(files).forEach(f => formData.append('file', f));
+
+  try {
+    barFill.style.width = '60%';
+    const res = await fetch('/api/projects/' + PID + '/images', {
+      method: 'POST', body: formData
+    });
+    barFill.style.width = '100%';
+    const data = await res.json();
+
+    if (data.uploaded && data.uploaded.length > 0) {
+      showToast(`Uploaded ${data.uploaded.length} image(s)`, 'success');
+    }
+    if (data.errors && data.errors.length > 0) {
+      showToast(data.errors[0], 'error');
+    }
+    loadImages();
+  } catch {
+    showToast('Upload failed', 'error');
+  } finally {
+    setTimeout(() => {
+      bar.classList.remove('active');
+      barFill.style.width = '0%';
+    }, 600);
+  }
+}
+
+// ── Preview ────────────────────────────────────────────────────────────────
+function openPreview(name, isPreviewable) {
+  previewCurrentFile = name;
+  const overlay = document.getElementById('img-preview');
+  const img = document.getElementById('preview-img');
+  const nameEl = document.getElementById('preview-name');
+  const insertBtn = document.getElementById('preview-insert-btn');
+
+  if (isPreviewable) {
+    img.src = `/api/projects/${PID}/images/${encodeURIComponent(name)}`;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+  nameEl.textContent = name;
+  overlay.classList.add('open');
+}
+
+function closePreview(e) {
+  if (e && e.target !== document.getElementById('img-preview') && !e.target.classList.contains('img-preview-close')) return;
+  document.getElementById('img-preview').classList.remove('open');
+}
+
+function insertFromPreview() {
+  if (previewCurrentFile) {
+    insertImageSnippet(previewCurrentFile, null);
+    document.getElementById('img-preview').classList.remove('open');
+  }
+}
+
+// Init
+setupUpload();
+// Load images if sidebar was already open (e.g. page refresh)
+
+window.addEventListener('beforeunload', e => {
+  if (!saved) { e.preventDefault(); e.returnValue = ''; }
+});
+</script>
+</body>
+</html>

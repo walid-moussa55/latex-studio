@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LaTeX Studio — Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14; --surface: #13161d; --surface2: #1a1e28; --border: #252a38;
+    --accent: #4f9cf9; --accent2: #a78bfa; --green: #34d399; --red: #f87171;
+    --text: #e8eaf0; --text-muted: #6b7280; --text-dim: #9ca3af;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2.5rem; height: 64px; background: var(--surface);
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .logo span { color: var(--accent); }
+  .nav-actions { display: flex; align-items: center; gap: 0.6rem; }
+  .btn-import {
+    display: flex; align-items: center; gap: 0.45rem; padding: 0.6rem 1.2rem;
+    background: var(--surface2); color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .btn-import:hover { background: var(--surface); color: var(--text); border-color: var(--accent2); }
+  .btn-import svg { width: 16px; height: 16px; }
+  .btn-new {
+    display: flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.4rem;
+    background: var(--accent); color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(79,156,249,0.25);
+  }
+  .btn-new:hover { background: #3b82f6; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(79,156,249,0.35); }
+  .btn-new svg { width: 18px; height: 18px; }
+  .hero { padding: 3rem 2.5rem 2rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 600; line-height: 1.2; }
+  .hero-sub { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.3rem; }
+  .container { padding: 0 2.5rem 4rem; }
+  .section-label {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+  }
+  .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(79,156,249,0.12); }
+  .card-thumb {
+    height: 120px; background: var(--surface2); display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; line-height: 1.8; padding: 1rem;
+    overflow: hidden; position: relative; border-bottom: 1px solid var(--border);
+  }
+  .card-thumb::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, var(--surface) 100%); }
+  .card-thumb-text { color: var(--text-muted); opacity: 0.5; white-space: pre; }
+  .card-body { padding: 1rem 1.2rem 1.2rem; }
+  .card-name { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-meta { font-size: 0.75rem; color: var(--text-muted); }
+  .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+  .open-btn {
+    font-size: 0.8rem; font-weight: 600; color: var(--accent); background: rgba(79,156,249,0.1);
+    padding: 0.35rem 0.9rem; border-radius: 6px; text-decoration: none;
+    border: 1px solid rgba(79,156,249,0.25); transition: background 0.2s;
+  }
+  .open-btn:hover { background: rgba(79,156,249,0.2); }
+  .icon-btns { display: flex; gap: 0.4rem; }
+  .icon-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-muted);
+    width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .icon-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--text-muted); }
+  .icon-btn.export:hover { color: var(--accent2); border-color: var(--accent2); background: rgba(167,139,250,0.08); }
+  .icon-btn.del:hover { color: var(--red); border-color: var(--red); background: rgba(248,113,113,0.08); }
+  .icon-btn svg { width: 14px; height: 14px; }
+  .empty { grid-column: 1/-1; text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .empty h3 { font-size: 1.2rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(5px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 2rem; width: 460px; max-width: 95vw;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.55); animation: popIn 0.2s ease;
+  }
+  @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 0.4rem; }
+  .modal-subtitle { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .modal label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem; }
+  .modal input[type="text"] {
+    width: 100%; padding: 0.7rem 1rem; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .modal input[type="text"]:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.5rem; }
+  .btn-cancel {
+    padding: 0.6rem 1.2rem; background: none; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; transition: background 0.2s;
+  }
+  .btn-cancel:hover { background: var(--surface2); }
+  .btn-create {
+    padding: 0.6rem 1.4rem; background: var(--accent); border: none; border-radius: 8px;
+    color: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+    transition: background 0.2s;
+  }
+  .btn-create:hover { background: #3b82f6; }
+  .btn-create:disabled { background: #1e3a5f; color: #4a7ab5; cursor: not-allowed; }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 2rem 1rem;
+    text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 1.2rem; position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent2); background: rgba(167,139,250,0.05); }
+  .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-zone-icon { font-size: 2.2rem; margin-bottom: 0.6rem; }
+  .drop-zone-text { font-size: 0.88rem; color: var(--text-dim); line-height: 1.6; }
+  .drop-zone-text strong { color: var(--accent2); }
+  .drop-zone-formats { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.7rem; }
+  .format-badge {
+    font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; padding: 0.2rem 0.55rem;
+    border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+  }
+
+  /* File preview */
+  .file-preview {
+    display: none; align-items: center; gap: 0.8rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.7rem 1rem; margin-bottom: 1.2rem;
+  }
+  .file-preview.visible { display: flex; }
+  .file-preview-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .file-preview-info { flex: 1; min-width: 0; }
+  .file-preview-name { font-size: 0.88rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-preview-size { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+  .file-preview-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.2rem; border-radius: 4px; transition: color 0.2s; }
+  .file-preview-clear:hover { color: var(--red); }
+
+  /* Progress */
+  .import-progress { display: none; margin-top: 1rem; }
+  .import-progress.visible { display: block; }
+  .progress-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+  .progress-bar-wrap { height: 4px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .progress-bar-fill {
+    height: 100%; background: var(--accent2); border-radius: 4px; width: 0%;
+    transition: width 0.4s ease; animation: ppulse 1.2s ease-in-out infinite;
+  }
+  @keyframes ppulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 600;
+    padding: 0.8rem 1.4rem; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; font-size: 0.88rem; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    transform: translateY(80px); opacity: 0; transition: transform 0.3s, opacity 0.3s;
+    max-width: 340px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  .toast.info { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">LaTeX <span>Studio</span></div>
+  <div class="nav-actions">
+    <button class="btn-import" onclick="openImportModal()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      Import Project
+    </button>
+    <button class="btn-new" onclick="openModal()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      New Project
+    </button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div>
+    <div class="hero-title">Your Projects</div>
+    <div class="hero-sub">{{ projects|length }} project{% if projects|length != 1 %}s{% endif %}</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="section-label">All Projects</div>
+  <div class="projects-grid" id="projects-grid">
+    {% if projects %}
+      {% for p in projects %}
+      <div class="card" id="card-{{ p.id }}">
+        <div class="card-thumb">
+          <div class="card-thumb-text">\documentclass{article}
+\begin{document}
+  \title{ {{ p.name }} }
+  \maketitle
+  % ...
+\end{document}</div>
+        </div>
+        <div class="card-body">
+          <div class="card-name" id="name-{{ p.id }}">{{ p.name }}</div>
+          <div class="card-meta">Modified {{ p.modified }}</div>
+          <div class="card-actions">
+            <a class="open-btn" href="/editor/{{ p.id }}">Open Editor &rarr;</a>
+            <div class="icon-btns">
+              <button class="icon-btn" title="Rename" onclick="startRename('{{ p.id }}', event)">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              </button>
+              <button class="icon-btn export" title="Export as ZIP" onclick="exportProject('{{ p.id }}', '{{ p.name }}', event)">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              </button>
+              <button class="icon-btn del" title="Delete" onclick="deleteProject('{{ p.id }}', event)">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty" id="empty-state">
+        <div class="empty-icon">📄</div>
+        <h3>No projects yet</h3>
+        <p>Create a new project or import an existing one from a .zip or .rar file.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2>New Project</h2>
+    <div class="modal-subtitle">Start from the default LaTeX template</div>
+    <label for="proj-name">Project Name</label>
+    <input type="text" id="proj-name" placeholder="My Research Paper" autocomplete="off"/>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-create" onclick="createProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Modal -->
+<div class="modal-overlay" id="rename-modal" onclick="if(event.target===this)closeRenameModal()">
+  <div class="modal">
+    <h2>Rename Project</h2>
+    <div class="modal-subtitle">Change the display name of this project</div>
+    <label for="rename-input">New Name</label>
+    <input type="text" id="rename-input" placeholder="Project Name" autocomplete="off"/>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeRenameModal()">Cancel</button>
+      <button class="btn-create" onclick="submitRename()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="import-modal" onclick="if(event.target===this)closeImportModal()">
+  <div class="modal">
+    <h2>Import Project</h2>
+    <div class="modal-subtitle">Upload a <strong style="color:var(--accent2)">.zip</strong> or <strong style="color:var(--accent2)">.rar</strong> archive — it will be extracted on the server</div>
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="import-file-input" accept=".zip,.rar" onchange="onFileSelected(this)"/>
+      <div class="drop-zone-icon">🗜️</div>
+      <div class="drop-zone-text">
+        <strong>Click to browse</strong> or drag &amp; drop your archive here
+      </div>
+      <div class="drop-zone-formats">
+        <span class="format-badge">.zip</span>
+        <span class="format-badge">.rar</span>
+      </div>
+    </div>
+
+    <div class="file-preview" id="file-preview">
+      <div class="file-preview-icon" id="file-preview-icon">📦</div>
+      <div class="file-preview-info">
+        <div class="file-preview-name" id="file-preview-name"></div>
+        <div class="file-preview-size" id="file-preview-size"></div>
+      </div>
+      <button class="file-preview-clear" title="Remove file" onclick="clearFile()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <label for="import-name">Project Name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+    <input type="text" id="import-name" placeholder="Leave blank to use filename" autocomplete="off"/>
+
+    <div class="import-progress" id="import-progress">
+      <div class="progress-label" id="progress-label">Uploading &amp; extracting…</div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar"></div></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeImportModal()">Cancel</button>
+      <button class="btn-create" id="import-btn" onclick="importProject()" disabled>Import Project</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let renameTarget = null;
+let importFile = null;
+
+/* New Project */
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('proj-name').focus(), 100);
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('proj-name').value = '';
+}
+document.getElementById('proj-name').addEventListener('keydown', e => { if (e.key === 'Enter') createProject(); });
+
+async function createProject() {
+  const name = document.getElementById('proj-name').value.trim() || 'Untitled Project';
+  const res = await fetch('/api/projects', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name })
+  });
+  const data = await res.json();
+  closeModal();
+  showToast('Project created!', 'success');
+  setTimeout(() => window.location.href = '/editor/' + data.id, 600);
+}
+
+/* Delete */
+async function deleteProject(pid, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this project? This cannot be undone.')) return;
+  await fetch('/api/projects/' + pid, { method: 'DELETE' });
+  document.getElementById('card-' + pid).remove();
+  showToast('Project deleted', 'error');
+}
+
+/* Rename */
+function startRename(pid, e) {
+  e.stopPropagation();
+  renameTarget = pid;
+  const current = document.getElementById('name-' + pid).textContent;
+  document.getElementById('rename-input').value = current;
+  document.getElementById('rename-modal').classList.add('open');
+  setTimeout(() => document.getElementById('rename-input').select(), 100);
+}
+function closeRenameModal() {
+  document.getElementById('rename-modal').classList.remove('open');
+  renameTarget = null;
+}
+document.getElementById('rename-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitRename(); });
+
+async function submitRename() {
+  if (!renameTarget) return;
+  const name = document.getElementById('rename-input').value.trim();
+  if (!name) return;
+  await fetch('/api/projects/' + renameTarget + '/rename', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name })
+  });
+  document.getElementById('name-' + renameTarget).textContent = name;
+  closeRenameModal();
+  showToast('Renamed!', 'success');
+}
+
+/* Export */
+function exportProject(pid, name, e) {
+  e.stopPropagation();
+  showToast('Preparing ZIP download\u2026', 'info');
+  const a = document.createElement('a');
+  a.href = '/api/projects/' + pid + '/export';
+  a.download = name.replace(/\s+/g, '_') + '.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+/* Import */
+function openImportModal() {
+  document.getElementById('import-modal').classList.add('open');
+}
+function closeImportModal() {
+  document.getElementById('import-modal').classList.remove('open');
+  clearFile();
+  document.getElementById('import-name').value = '';
+  document.getElementById('import-progress').classList.remove('visible');
+  document.getElementById('import-btn').disabled = true;
+  document.getElementById('import-btn').textContent = 'Import Project';
+}
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) applyFile(file);
+});
+
+function onFileSelected(input) {
+  if (input.files && input.files[0]) applyFile(input.files[0]);
+}
+
+function applyFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['zip', 'rar'].includes(ext)) { showToast('Only .zip and .rar files are supported', 'error'); return; }
+  importFile = file;
+  document.getElementById('drop-zone').style.display = 'none';
+  const preview = document.getElementById('file-preview');
+  preview.classList.add('visible');
+  document.getElementById('file-preview-icon').textContent = ext === 'zip' ? '\uD83D\uDDDC\uFE0F' : '\uD83D\uDCE6';
+  document.getElementById('file-preview-name').textContent = file.name;
+  document.getElementById('file-preview-size').textContent = formatBytes(file.size);
+  const nameInput = document.getElementById('import-name');
+  if (!nameInput.value.trim()) nameInput.value = file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ');
+  document.getElementById('import-btn').disabled = false;
+}
+
+function clearFile() {
+  importFile = null;
+  document.getElementById('drop-zone').style.display = '';
+  document.getElementById('file-preview').classList.remove('visible');
+  document.getElementById('import-file-input').value = '';
+  document.getElementById('import-btn').disabled = true;
+}
+
+async function importProject() {
+  if (!importFile) return;
+  const btn = document.getElementById('import-btn');
+  const progress = document.getElementById('import-progress');
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  btn.disabled = true; btn.textContent = 'Importing\u2026';
+  progress.classList.add('visible'); label.textContent = 'Uploading & extracting\u2026';
+  bar.style.width = '30%';
+  const formData = new FormData();
+  formData.append('file', importFile);
+  const name = document.getElementById('import-name').value.trim();
+  if (name) formData.append('name', name);
+  try {
+    bar.style.width = '65%';
+    const res = await fetch('/api/projects/import', { method: 'POST', body: formData });
+    bar.style.width = '90%';
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Import failed');
+    bar.style.width = '100%';
+    label.textContent = 'Done!';
+    addCardToGrid(data.id, data.name);
+    closeImportModal();
+    showToast('Project imported successfully!', 'success');
+  } catch(err) {
+    progress.classList.remove('visible');
+    btn.disabled = false; btn.textContent = 'Import Project';
+    showToast('Import failed: ' + err.message, 'error');
+  }
+}
+
+function addCardToGrid(pid, name) {
+  const empty = document.getElementById('empty-state');
+  if (empty) empty.remove();
+  const now = new Date().toLocaleString('sv').slice(0, 16).replace('T', ' ');
+  const card = document.createElement('div');
+  card.className = 'card'; card.id = 'card-' + pid;
+  card.innerHTML =
+    '<div class="card-thumb"><div class="card-thumb-text">\\documentclass{article}\n\\begin{document}\n  \\title{ ' + escHtml(name) + ' }\n  \\maketitle\n  % ...\n\\end{document}</div></div>' +
+    '<div class="card-body">' +
+      '<div class="card-name" id="name-' + pid + '">' + escHtml(name) + '</div>' +
+      '<div class="card-meta">Modified ' + now + '</div>' +
+      '<div class="card-actions">' +
+        '<a class="open-btn" href="/editor/' + pid + '">Open Editor &rarr;</a>' +
+        '<div class="icon-btns">' +
+          '<button class="icon-btn" title="Rename" onclick="startRename(\'' + pid + '\', event)">' +
+            '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>' +
+          '</button>' +
+          '<button class="icon-btn export" title="Export as ZIP" onclick="exportProject(\'' + pid + '\', \'' + escHtml(name) + '\', event)">' +
+            '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>' +
+          '</button>' +
+          '<button class="icon-btn del" title="Delete" onclick="deleteProject(\'' + pid + '\', event)">' +
+            '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('projects-grid').prepend(card);
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.className = 'toast', 3200);
+}
+</script>
+</body>
+</html>
