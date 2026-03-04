@@ -3,6 +3,18 @@
 A self-hosted, Overleaf-style LaTeX editor that runs on your own machine.
 Split-pane interface: syntax-highlighted editor on the left, compiled PDF viewer on the right.
 
+**Author:** [WAM Development](https://github.com/walid-moussa55)
+
+---
+
+## Screenshots
+
+### Dashboard
+![Dashboard](docs/dashboard_page.png)
+
+### Editor
+![Editor](docs/editor_page.png)
+
 ---
 
 ## Quick Start with Docker (Recommended)
@@ -198,6 +210,10 @@ latex-studio/
 ├── .dockerignore           # Files excluded from Docker build
 ├── README.md
 │
+├── docs/                   # Screenshots
+│   ├── dashboard_page.png
+│   └── editor_page.png
+│
 ├── templates/
 │   ├── index.html          # Project dashboard
 │   └── editor.html         # Split-pane editor + PDF viewer
@@ -281,3 +297,16 @@ app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1 GB
 | `pdflatex` *(system)* | LaTeX compilation |
 | `lmodern` *(system)* | Latin Modern fonts for LaTeX |
 | `unrar-free` *(system, optional)* | RAR archive extraction |
+
+---
+
+## Summary
+
+LaTeX Studio is a lightweight, self-hosted alternative to Overleaf. It gives you a browser-based
+LaTeX editor with live PDF compilation, project management, and import/export — all running on
+your own machine with no internet dependency. Deploy it in seconds with Docker, or run it directly
+with Python and TeX Live. Your projects are stored locally and fully under your control.
+
+---
+
+*Built by [WAM Development](https://github.com/walid-moussa55)*
