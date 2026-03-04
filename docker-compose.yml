@@ -1,0 +1,13 @@
+
+services:
+  latex-studio:
+    build: .
+    container_name: latex-studio
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persist all projects on your host machine
+      - ./projects:/app/projects
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
